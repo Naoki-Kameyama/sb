@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8" ?><ChoregrapheProject xmlns="http://www.aldebaran-robotics.com/schema/choregraphe/project.xsd" xar_version="3"><Box name="root" id="-1" localization="8" tooltip="Root box of Choregraphe&apos;s behavior. Highest level possible." x="0" y="0"><bitmap>media/images/box/root.png</bitmap><script language="4"><content><![CDATA[]]></content></script><Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" /><Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" /><Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" /><Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="ボックスBehaviorの終了時に信号を送る。" id="4" /><Timeline enable="0"><BehaviorLayer name="behavior_layer1"><BehaviorKeyframe name="keyframe1" index="1"><Diagram><Box name="Say Text" id="3" localization="8" tooltip="Say the text received on its input." x="551" y="467"><bitmap>media/images/box/interaction/say.png</bitmap><script language="4"><content><![CDATA[import time
+
+class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self, False)
+        self.tts = ALProxy('ALTextToSpeech')
+        self.ttsStop = ALProxy('ALTextToSpeech', True) #Create another proxy as wait is blocking if audioout is remote
+
+    def onLoad(self):
+        self.bIsRunning = False
+        self.ids = []
+
+    def onUnload(self):
+        for id in self.ids:
+            try:
+                self.ttsStop.stop(id)
+            except:
+                pass
+        while( self.bIsRunning ):
+            time.sleep( 0.2 )
+
+    def onInput_onStart(self, p):
+        self.bIsRunning = True
+        try:
+            sentence = "\RSPD="+ str( self.getParameter("Speed (%)") ) + "\ "
+            sentence += "\VCT="+ str( self.getParameter("Voice shaping (%)") ) + "\ "
+            sentence += str(p)
+            sentence +=  "\RST\ "
+            id = self.tts.post.say(str(sentence))
+            self.ids.append(id)
+            self.tts.wait(id, 0)
+        finally:
+            try:
+                self.ids.remove(id)
+            except:
+                pass
+            if( self.ids == [] ):
+                self.onStopped() # activate output of the box
+                self.bIsRunning = False
+
+    def onInput_onStop(self):
+        self.onUnload()]]></content></script><Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when Diagram is loaded." id="1" /><Input name="onStart" type="3" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this Input." id="2" /><Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this Input." id="3" /><Output name="onStopped" type="1" type_size="1" nature="1" inner="0" tooltip="Signal sent when Box behavior is finished." id="4" /><Parameter name="Voice shaping (%)" inherits_from_parent="1" content_type="1" value="100" default_value="100" min="50" max="150" tooltip='Used to modify at runtime the voice feature (tone, speed). In a slighty&#x0A;different way than pitch and speed, it gives a kind of &quot;gender or age&#x0A;modification&quot; effect.&#x0A;&#x0A;For instance, a quite good male derivation of female voice can be&#x0A;obtained setting this parameter to 78%.&#x0A;&#x0A;Note: For a better effect, you can compensate this parameter with the&#x0A;speed parameter. For example, if you want to decrease by 20% the voice&#x0A;shaping, you will have to increase by 20% the speed to keep a constant&#x0A;average speed.' id="5" /><Parameter name="Speed (%)" inherits_from_parent="1" content_type="1" value="100" default_value="100" min="50" max="200" tooltip="Changes the speed of the voice.&#x0A;&#x0A;Note: For a better effect, you can compensate this parameter with the voice&#x0A;shaping parameter. For example, if you want to increase by 20% the speed, you&#x0A;will have to decrease by 20% the voice shaping to keep a constant average&#x0A;speed." id="6" /><Resource name="Speech" type="Lock" timeout="0" /></Box><Box name="Python Script" id="2" localization="8" tooltip="This box contains a basic python script and can be used to create any python script box you would like.&#x0A;&#x0A;To edit its script, double-click on it." x="648" y="101"><bitmap>media/images/box/box-python-script.png</bitmap><script language="4"><content><![CDATA[# -*- coding: utf-8 -*-
+from email.Header import Header
+from email.header import decode_header
+
+class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self)
+
+    def onLoad(self):
+        #put initialization code here
+        pass
+
+    def onUnload(self):
+        #put clean-up code here
+        pass
+
+    def onInput_onStart(self, p):
+        #self.onStopped(p) #activate the output of the box
+        self.string1=p[0][1]
+        self.string2=p[0][2][0]
+        b = str(self.string2)
+        #self.log(b.splitlines())
+        for s in b.splitlines():
+            if "【氏名】" in s:
+                nagasa = len(s)
+                self.onStopped(s)
+
+            if "【日程】" in s:
+                nagasa = len(s)
+                self.onStopped(s)
+
+            if "【勤怠】" in s:
+                nagasa = len(s)
+                self.onStopped(s)
+
+            if "【理由】" in s:
+                nagasa = len(s)
+                self.onStopped(s)
+
+            if "【詳細】" in s:
+                nagasa = len(s)
+                self.onStopped(s)
+
+
+
+
+        subject = decode_header(self.string1)[0][0]
+        charset = decode_header(self.string1)[0][1]
+
+        #self.onStopped("勤怠に関する連絡が届きました。"+subject+","+self.string2)
+        pass
+
+    def onInput_onStop(self):
+        self.onUnload() #it is recommended to reuse the clean-up as the box is stopped
+        self.onStopped(p) #activate the output of the box]]></content></script><Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" /><Input name="onStart" type="0" type_size="1" nature="2" inner="0" tooltip="Box behavior starts when a signal is received on this input." id="2" /><Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Box behavior stops when a signal is received on this input." id="3" /><Output name="onStopped" type="3" type_size="1" nature="1" inner="0" tooltip="Signal sent when box behavior is finished." id="4" /></Box><Box name="Wait" id="6" localization="8" tooltip="Wait a moment before sending a signal on the output. &#x0A;Can be stopped anytime. &#x0A;Stimulating the input again before output is activated restarts the waiting period.&#x0A;" x="121" y="196"><bitmap>media/images/box/wait.png</bitmap><script language="4"><content><![CDATA[class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self, False)
+
+    def onLoad(self):
+        self.waiting = None
+
+    def onUnload(self):
+        self.cancelWaiting()
+
+    def triggerOutput(self):
+        self.timerOutput()
+
+    def cancelWaiting(self):
+        if self.waiting:
+            self.waiting.cancel()
+        self.waiting = None
+
+    def onInput_onStart(self):
+        self.cancelWaiting()
+        import qi
+        self.waiting = qi.async(self.triggerOutput, delay=int(self.getParameter("Timeout (s)") * 1000 * 1000))
+
+    def onInput_onStop(self):
+        if self.getParameter("Trigger timerOutput if cancelled") and self.waiting and self.waiting.isRunning():
+            self.timerOutput()
+        self.onUnload()]]></content></script><Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" /><Input name="onStart" type="1" type_size="1" nature="2" inner="0" tooltip="Start the Wait box with the configured timeout value." id="2" /><Input name="onStop" type="1" type_size="1" nature="3" inner="0" tooltip="Stop the wait and stimulate the output." id="3" /><Output name="timerOutput" type="1" type_size="1" nature="1" inner="0" tooltip="Send a bang once time set in parameters is elapsed, or if the box is stopped and the appropriate parameter is set." id="4" /><Parameter name="Timeout (s)" inherits_from_parent="0" content_type="2" value="5" default_value="1" min="0" max="5000" tooltip="Duration the box waits before stimulating the output." id="5" /><Parameter name="Trigger timerOutput if cancelled" inherits_from_parent="0" content_type="0" value="0" default_value="1" tooltip="If the box is currently waiting and cancelled, output will be stimulated." id="6" /></Box><Box name="Send E-mail (1)" id="5" localization="8" tooltip="Send an e-mail. Set all parameters of this e-mail before sending it.&#x0A;&#x0A;!!Warning!! The Password has to be hardcoded inside the behavior, and will not&#x0A;be encrypted or hidden. You should create an e-mail account for your robot, that&#x0A;uses a password that you are comfortable to leave un-encrypted." x="58" y="477"><bitmap>media/images/box/internet/email.png</bitmap><script language="4"><content><![CDATA[import sys, os
+import smtplib, email
+
+def mail(email_user, to, subject, text, attach, email_pwd, smtp, port):
+  msg = email.MIMEMultipart.MIMEMultipart()
+  msg['From'] = email_user
+  msg['To'] = to
+  msg['Subject'] = subject
+
+  msg.attach(email.MIMEText.MIMEText(text))
+
+  if attach:
+     part = email.MIMEBase.MIMEBase('application', 'octet-stream')
+     part.set_payload(open(attach, 'rb').read())
+     email.Encoders.encode_base64(part)
+     part.add_header('Content-Disposition',
+             'attachment; filename="%s"' % os.path.basename(attach))
+     msg.attach(part)
+
+  if( port != "" ):
+      mailServer = smtplib.SMTP(smtp, port)
+  else:
+      mailServer = smtplib.SMTP(smtp)
+  mailServer.ehlo()
+  mailServer.starttls()
+  mailServer.ehlo()
+  mailServer.login(email_user, email_pwd)
+  mailServer.sendmail(email_user, to, msg.as_string())
+
+  mailServer.close()
+
+class MyClass(GeneratedClass):
+  def __init__(self):
+    GeneratedClass.__init__(self, False)
+
+  def onLoad(self):
+    pass
+
+  def onUnload(self):
+    #puts code for box cleanup here
+    pass
+
+  def onInput_onSend(self):
+    sEmailUser = self.getParameter("From")
+    aTo = self.getParameter("To").split(";")
+    sSubject = self.getParameter("Subject")
+    sText = self.getParameter("Contents")
+    sAttachedFilePath = self.getParameter("Attachment")
+    sPwd = self.getParameter("Password")
+    sSmtp = self.getParameter("SMTP address")
+    sPort = int( self.getParameter("Port number") )
+    try:
+        sPort = int( sPort )
+        bValidPort = ( sPort >= 0 and sPort <= 65535 )
+    except:
+        bValidPort = False
+    if( not bValidPort ):
+        raise Exception( str(sPort) + " is not a valid port number to use to send e-mail. It must be an integer between 0 and 65535. Please check that the port parameter of the box is correct." )
+    for address in aTo:
+      try:
+        mail(
+          sEmailUser,
+          address,
+          sSubject,
+          sText,
+          sAttachedFilePath,
+          sPwd,
+          sSmtp,
+          sPort)
+      except smtplib.SMTPAuthenticationError as e:
+        raise(Exception("Authentication error, server answered : [%s] %s" % (e.smtp_code, e.smtp_error)))
+
+
+    self.onSent() # activate output of the box]]></content></script><Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" /><Input name="onSend" type="1" type_size="1" nature="1" inner="0" tooltip="Send the e-mail." id="2" /><Output name="onSent" type="1" type_size="1" nature="2" inner="0" tooltip="E-mail sent." id="3" /><Output name="onError" type="3" type_size="1" nature="2" inner="0" tooltip="" id="4" /><Parameter name="From" inherits_from_parent="0" content_type="3" value="pythongo1234@gmail.com" default_value="myemail@email.com" custom_choice="0" tooltip="E-mail address of the sender." id="5" /><Parameter name="Password" inherits_from_parent="0" content_type="3" value="kanecoin" default_value="" custom_choice="0" password="1" tooltip="Password of your e-mail account." id="6" /><Parameter name="To" inherits_from_parent="0" content_type="3" value="pythongo1234@gmail.com" default_value="to@email.com" custom_choice="0" tooltip="Receiver(s) of the e-mail. Separate e-mail addresses by &apos;;&apos;." id="7" /><Parameter name="Subject" inherits_from_parent="0" content_type="3" value="" default_value="" custom_choice="0" tooltip="Subject of the e-mail." id="8" /><Parameter name="Contents" inherits_from_parent="0" content_type="3" value="" default_value="" custom_choice="0" tooltip="Contents of the e-mail." id="9" /><Parameter name="Attachment" inherits_from_parent="0" content_type="3" value="" default_value="" custom_choice="0" tooltip="Attachment path." id="10" /><Parameter name="SMTP address" inherits_from_parent="0" content_type="3" value="smtp.gmail.com" default_value="smtp.email.com" custom_choice="0" tooltip="SMTP server this box is supposed to use." id="11" /><Parameter name="Port number" inherits_from_parent="0" content_type="3" value="587" default_value="587" custom_choice="1" tooltip="Port of the server to use.&#x0A;&#x0A;Note: For example, for a gmail address to use TLS/STARTTLS you need to set the&#x0A;port to 587, and to use SSL you need to set it to 465." id="12"><Choice value="587" /><Choice value="465" /></Parameter></Box><Box name="Fetch E-mail" id="1" localization="8" tooltip='Fetch new e-mails from a server. Set the parameters to configure the server.&#x0A;&#x0A;Note: Make sure POP is enabled in your server. For example, in GMail you&#x0A;can go in &quot;Settings&quot; -&gt; &quot;Forwarding and POP/IMAP&quot; and select the option&#x0A;&quot;Enable POP for mail that arrives from now on&quot; -&gt; &quot;Save Changes&quot;.&#x0A;&#x0A;!!Warning!! The Password has to be hardcoded inside the behavior, and will&#x0A;not be encrypted or hidden. You should create an e-mail account for your robot,&#x0A;that uses a password that you are comfortable to leave un-encrypted.' x="359" y="83"><bitmap>media/images/box/internet/email.png</bitmap><script language="4"><content><![CDATA[import os, mimetypes                 # mime: type to name
+import email.Parser
+from email.Message import Message
+
+class MailParser():
+  """Source of the class: Mark Lutz, Programming Python, Third Edition, published by O'Reilly Media, ISBN: 978-0-596-00925-0
+
+  methods for parsing message text, attachments
+  subtle thing: Message object payloads are either a simple
+  string for non-multipart messages, or a list of Message
+  objects if multipart (possiby nested); we don't need to
+  distinguish between the two cases here, because the Message
+  walk generator always returns self first, and so works fine
+  on non-multipart messages too (a single object is walked);
+
+  for simple messages, the message body is always considered
+  here to be the sole part of the mail;  for miltipart messages,
+  the parts list includes the main message text, as well as all
+  attachments;  this allows simple messages not of type text to
+  be handled like attachments in a UI (e.g., saved, opened);
+  Message payload may also be None for some oddball part types;
+  """
+
+
+  def walkNamedParts(self, message):
+    """
+    generator to avoid repeating part naming logic
+    skips multipart headers, makes part filenames
+    message is already-parsed email.Message object
+    doesn't skip oddball types: payload may be None
+    """
+    for (ix, part) in enumerate(message.walk()):  # walk includes message
+      maintype = part.get_content_maintype()    # ix includes multiparts
+      if maintype == 'multipart':
+        continue                # multipart/*: container
+      filename, contype = self.partName(part, ix)
+      yield (filename, contype, part)
+
+  def partName(self, part, ix):
+    """
+    extract filename and content type from message part;
+    filename: tries Content-Disposition, then Content-Type
+    name param, or generates one based on mimetype guess;
+    """
+    filename = part.get_filename()        # filename in msg hdrs?
+    contype  = part.get_content_type()      # lower maintype/subtype
+    if not filename:
+      filename = part.get_param('name')     # try content-type name
+    if not filename:
+      if contype == 'text/plain':         # hardcode plain text ext
+        ext = '.txt'              # else guesses .ksh!
+      else:
+        ext = mimetypes.guess_extension(contype)
+        if not ext: ext = '.bin'        # use a generic default
+      filename = 'part-%03d%s' % (ix, ext)
+    return (filename, contype)
+
+  def saveParts(self, savedir, message):
+    """
+    store all parts of a message as files in a local directory;
+    returns [('maintype/subtype', 'filename')] list for use by
+    callers, but does not open any parts or attachments here;
+    get_payload decodes base64, quoted-printable, uuencoded data;
+    mail parser may give us a None payload for oddball types we
+    probably should skip over: convert to str here to be safe;
+    """
+    if not os.path.exists(savedir):
+      os.mkdir(savedir)
+    partfiles = []
+    for (filename, contype, part) in self.walkNamedParts(message):
+      fullname = os.path.join(savedir, filename)
+      fileobj  = open(fullname, 'wb')       # use binary mode
+      content  = part.get_payload(decode=1)     # decode base64,qp,uu
+      fileobj.write(str(content))         # make sure is a str
+      fileobj.close()
+      partfiles.append((contype, fullname))     # for caller to open
+    return partfiles
+
+  def saveOnePart(self, savedir, partname, message):
+    """
+    ditto, but find and save just one part by name
+    """
+    if not os.path.exists(savedir):
+      os.mkdir(savedir)
+    fullname = os.path.join(savedir, partname)
+    (contype, content) = self.findOnePart(partname, message)
+    open(fullname, 'wb').write(str(content))
+    return (contype, fullname)
+
+  def partsList(self, message):
+    """"
+    return a list of filenames for all parts of an
+    already-parsed message, using same file name logic
+    as saveParts, but do not store the part files here
+    """
+    validParts = self.walkNamedParts(message)
+    return [filename for (filename, contype, part) in validParts]
+
+  def findOnePart(self, partname, message):
+    """
+    find and return part's content, given its name
+    intended to be used in conjunction with partsList
+    we could also mimetypes.guess_type(partname) here
+    we could also avoid this search by saving in dict
+    """
+    for (filename, contype, part) in self.walkNamedParts(message):
+      if filename == partname:
+        content = part.get_payload(decode=1)      # base64,qp,uu
+        return (contype, content)
+
+  def findMainText(self, message):
+    """
+    for text-oriented clients, return the first text part;
+    for the payload of a simple message, or all parts of
+    a multipart message, looks for text/plain, then text/html,
+    then text/*, before deducing that there is no text to
+    display;  this is a heuristic, but covers most simple,
+    multipart/alternative, and multipart/mixed messages;
+    content-type defaults to text/plain if not in simple msg;
+
+    handles message nesting at top level by walking instead
+    of list scans;  if non-multipart but type is text/html,
+    returns the htlm as the text with an html type: caller
+    may open in webbrowser;  if non-multipart and not text,
+    no text to display: save/open in UI;  caveat: does not
+    try to concatenate multiple inline text/plain parts
+    """
+    # try to find a plain text
+    for part in message.walk():            # walk visits messge
+      type = part.get_content_type()         # if non-multipart
+      if type == 'text/plain':
+        return type, part.get_payload(decode=1)  # may be base64,qp,uu
+
+    # try to find a html part
+    for part in message.walk():
+      type = part.get_content_type()
+      if type == 'text/html':
+        return type, part.get_payload(decode=1)  # caller renders
+
+    # try any other text type, including xml
+    for part in message.walk():
+      if part.get_content_maintype() == 'text':
+        return part.get_content_type(), part.get_payload(decode=1)
+
+    # punt: could use first part, but it's not marked as text
+    return 'text/plain', '[No text to display]'
+
+  # returned when parses fail
+  errorMessage = Message()
+  errorMessage.set_payload('[Unable to parse message - format error]')
+
+  def parseHeaders(self, mailtext):
+    """
+    parse headers only, return root email.Message object
+    stops after headers parsed, even if nothing else follows (top)
+    email.Message object is a mapping for mail header fields
+    payload of message object is None, not raw body text
+    """
+    try:
+      return email.Parser.Parser().parsestr(mailtext, headersonly=True)
+    except:
+      return self.errorMessage
+
+  def parseMessage(self, fulltext):
+    """
+    parse entire message, return root email.Message object
+    payload of message object is a string if not is_multipart()
+    payload of message object is more Messages if multiple parts
+    the call here same as calling email.message_from_string()
+    """
+    try:
+      return email.Parser.Parser().parsestr(fulltext)     # may fail!
+    except:
+      return self.errorMessage   # or let call handle? can check return
+
+  def parseMessageRaw(self, fulltext):
+    """
+    parse headers only, return root email.Message object
+    stops after headers parsed, for efficiency (not yet used here)
+    payload of message object is raw text of mail after headers
+    """
+    try:
+      return email.Parser.HeaderParser().parsestr(fulltext)
+    except:
+      return self.errorMessage
+
+import getpass, poplib
+from email.Parser import Parser
+
+class MyClass(GeneratedClass):
+  def __init__(self):
+    GeneratedClass.__init__(self, False)
+    self.isRunning = False
+    self.parser = Parser()
+
+  def onLoad(self):
+    pass
+
+  def onUnload(self):
+    try :
+      self.pop.quit()
+    except :
+      pass
+
+  def onInput_onFetch(self):
+    #if( self.isRunning ) :
+      #self.logger.warning("Fetch E-mail is already running.")
+      #self.onEmails("")
+      #return
+    self.pop = self.getParameter("POP address")
+    self.username = self.getParameter("E-mail address")
+    self.pwd = self.getParameter("Password")
+    self.bEnableSSL = self.getParameter("Enable SSL")
+    self.port = self.getParameter("Port number")
+    try:
+        self.port = int( self.port )
+        bValidPort = ( self.port >= 0 and self.port <= 65535 )
+    except:
+        bValidPort = False
+    if( not bValidPort ):
+        raise Exception( str(self.port) + " is not a valid port number to use to fetch e-mail. It must be an integer between 0 and 65535. Please check that the port parameter of the box is correct." )
+    res = []
+    try :
+      self.isRunning = True
+      self.logger.debug( "Connecting to E-mail pop server" )
+      if( self.bEnableSSL ):
+        self.pop = poplib.POP3_SSL( self.pop, self.port )
+      else:
+        self.pop = poplib.POP3( self.pop, self.port, 10 )
+      self.pop.user( self.username )
+      self.pop.pass_( self.pwd )
+      # numMessages = len(self.pop.list()[1])
+      # self.logger.info( str( numMessages ) )
+      self.logger.debug( "Connection done" )
+
+      nbMess = self.pop.stat()[0]
+      messageToRead = nbMess
+      #self.logger.info( "number of message : " + str( nbMess ) )
+      if(self.getParameter("Last mail only")):
+        messageToRead = 1
+      #self.logger.info( "size in bytes : " + str( self.pop.stat()[1] ) )
+      restmp = []
+      for i in range( messageToRead ):
+        restmp = []
+        msg = "\n".join( self.pop.retr( nbMess - i )[1] )
+        mp = MailParser()
+        em = mp.parseMessage( msg )
+        restmp.append( em.get( "From" ) )
+        self.logger.debug( "E-mail received From : " + restmp[0] )
+        restmp.append( em.get( "Subject" ) )
+        #~ self.logger.info( "Subject : " + restmp[1] )
+        content = mp.findMainText( em )
+        # todo JM 26/03/09 : manage utf8 correctly
+        restmp.append( [ content[1], content[0] ] )
+        # self.logger.info( "Content : " + str( restmp[2][0] ) )
+        stored = mp.saveParts( "/var/tmp/", em )
+        # conversion from tuple to list
+        restmp.append( [ [ stored[j][i] for i in range( len( stored[0] ) ) ] for j in range( len( stored ) ) ] )
+        #~ self.logger.info( "Store in " + str( restmp[3] ) )
+        res.append( restmp )
+    except ValueError:
+      self.logger.error(str(ValueError))
+    try :
+      self.pop.quit()
+    except:
+      pass
+    self.onEmails(res)
+    self.isRunning = False]]></content></script><Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" /><Input name="onFetch" type="1" type_size="1" nature="1" inner="0" tooltip="Start scanning email server." id="2" /><Output name="onEmails" type="0" type_size="1" nature="2" inner="0" tooltip='After a checkup, emails will come through this output with the following&#x0A;structure:&#x0A;[email1, email2, ...] with the following structure for each email:&#x0A;[&quot;from&quot;, &quot;object&quot;, [&quot;message&quot;, &quot;text/plain&quot;],&#x0A;[[&quot;text/plain&quot;, &quot;/var/tmp/part-001.txt&quot;],&#x0A;[&quot;text/html&quot;, &quot;/var/tmp/part-002.html&quot;],&#x0A;[&quot;image/jpeg&quot;, &quot;/var/tmp/pic.jpg&quot;],&#x0A;[&quot;audio/x-wav&quot;, &quot;/var/tmp/audio.wav&quot;], ...]]' id="3" /><Output name="onError" type="3" type_size="1" nature="2" inner="0" tooltip="" id="4" /><Parameter name="E-mail address" inherits_from_parent="0" content_type="3" value="pythongo1234@gmail.com" default_value="myemail@email.com" custom_choice="0" tooltip="Your e-mail address account." id="5" /><Parameter name="Password" inherits_from_parent="0" content_type="3" value="kanecoin" default_value="" custom_choice="0" password="1" tooltip="Password of your account." id="6" /><Parameter name="POP address" inherits_from_parent="0" content_type="3" value="pop.gmail.com" default_value="pop.email.com" custom_choice="0" tooltip="POP address of your e-mail account." id="7" /><Parameter name="Port number" inherits_from_parent="0" content_type="3" value="995" default_value="995" custom_choice="1" tooltip="Port to contact your pop address.&#x0A;&#x0A;Note: When SSL is enabled this needed port is generally 995. When it is disabled it is generally 110." id="8"><Choice value="995" /><Choice value="110" /></Parameter><Parameter name="Enable SSL" inherits_from_parent="0" content_type="0" value="1" default_value="1" tooltip="If this option is enabled, the emails will be fetched over an SSL encrypted socket&#x0A;using the port defined above." id="9" /><Parameter name="Last mail only" inherits_from_parent="0" content_type="0" value="1" default_value="1" tooltip="" id="10" /></Box><Box name="Log" id="4" localization="8" tooltip="Prompt the message in the debug window. You can set a prefix and a priority&#x0A;for the message in the parameters." x="338" y="397"><bitmap>media/images/box/print.png</bitmap><script language="4"><content><![CDATA[class MyClass(GeneratedClass):
+    def __init__(self):
+        GeneratedClass.__init__(self, False)
+
+    def onLoad(self):
+        #~ puts code for box initialization here
+        pass
+
+    def onUnload(self):
+        #~ puts code for box cleanup here
+        pass
+
+    def onInput_message(self, p):
+        sPriority = self.getParameter("Priority")
+        sMessage = self.getParameter("Message prefix")
+        if( sMessage != "" and p != None ):
+            sMessage += ": "
+        if( p != None ):
+            sMessage += str(p)
+        if( sPriority == "Fatal" ):
+            self.logger.fatal( sMessage )
+        elif( sPriority == "Error" ):
+            self.logger.error( sMessage )
+        elif( sPriority == "Warning" ):
+            self.logger.warning( sMessage )
+        elif( sPriority == "Info" ):
+            self.logger.info( sMessage )
+        elif( sPriority == "Debug" ):
+            self.logger.debug( sMessage )
+        self.onDone()]]></content></script><Input name="onLoad" type="1" type_size="1" nature="0" inner="1" tooltip="Signal sent when diagram is loaded." id="1" /><Input name="message" type="0" type_size="1" nature="1" inner="0" tooltip='The message to print or a &quot;Bang&quot; to only print the message set as parameter.' id="2" /><Output name="onDone" type="1" type_size="1" nature="2" inner="0" tooltip="Signal sent when box behavior is finished." id="3" /><Parameter name="Message prefix" inherits_from_parent="0" content_type="3" value="Message text" default_value="Message text" custom_choice="0" tooltip="Enter the text you want to print before the input message." id="4" /><Parameter name="Priority" inherits_from_parent="0" content_type="3" value="Info" default_value="Info" custom_choice="0" tooltip="Enter the priority of your message. If you select error, the box will get red when it will be stimulated." id="5"><Choice value="Fatal" /><Choice value="Error" /><Choice value="Warning" /><Choice value="Info" /><Choice value="Debug" /></Parameter></Box><Link inputowner="3" indexofinput="2" outputowner="2" indexofoutput="4" /><Link inputowner="2" indexofinput="2" outputowner="1" indexofoutput="3" /><Link inputowner="1" indexofinput="2" outputowner="0" indexofoutput="2" /><Link inputowner="1" indexofinput="2" outputowner="3" indexofoutput="4" /><Link inputowner="1" indexofinput="2" outputowner="1" indexofoutput="4" /><Link inputowner="4" indexofinput="2" outputowner="1" indexofoutput="3" /></Diagram></BehaviorKeyframe></BehaviorLayer></Timeline></Box></ChoregrapheProject>
